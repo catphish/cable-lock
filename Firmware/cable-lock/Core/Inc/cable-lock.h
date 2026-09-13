@@ -1,0 +1,1 @@
+void cable_lock();

@@ -1,0 +1,409 @@
+ARM GAS  /tmp/ccrttpPE.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"cable-lock.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Core/Src/cable-lock.c"
+  20              		.section	.text.cable_lock,"ax",%progbits
+  21              		.align	1
+  22              		.global	cable_lock
+  23              		.syntax unified
+  24              		.thumb
+  25              		.thumb_func
+  27              	cable_lock:
+  28              	.LFB132:
+   1:Core/Src/cable-lock.c **** #include "main.h"
+   2:Core/Src/cable-lock.c **** 
+   3:Core/Src/cable-lock.c **** void cable_lock() {
+  29              		.loc 1 3 19 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33 0000 10B5     		push	{r4, lr}
+  34              		.cfi_def_cfa_offset 8
+  35              		.cfi_offset 4, -8
+  36              		.cfi_offset 14, -4
+   4:Core/Src/cable-lock.c ****   // This is the main function for the cable lock. The program works as follows.
+   5:Core/Src/cable-lock.c ****   // 1. The program waits for the CP pin (active low) to go low, indicating that the cable is conne
+   6:Core/Src/cable-lock.c ****   // 2. As soon as this is detected, the program activates the motor for 0.5 seconds to engage the 
+   7:Core/Src/cable-lock.c ****   // 3. After the pin is locked, the program closes the relay, allowing the CP signal to pass to th
+   8:Core/Src/cable-lock.c ****   // 4. The program then waits for the button pin (active low) to go low, indicating that the user 
+   9:Core/Src/cable-lock.c ****   // 5. As soon as this is detected, the program opens the relay, disabling charging.
+  10:Core/Src/cable-lock.c ****   // 6. The program then activates the motor for 0.5 seconds in the opposite direction to disengage
+  11:Core/Src/cable-lock.c ****   // 7. Next we need to wait for the cable to be unplugged, which is detected by the CP pin going c
+  12:Core/Src/cable-lock.c ****   // 8. Go back to step 1 and wait for the next cable connection.
+  13:Core/Src/cable-lock.c **** 
+  14:Core/Src/cable-lock.c ****   HAL_GPIO_WritePin(GPIOB, MOTOR_MODE1_Pin, GPIO_PIN_RESET);
+  37              		.loc 1 14 3 view .LVU1
+  38 0002 4C4C     		ldr	r4, .L12
+  39 0004 0022     		movs	r2, #0
+  40 0006 8021     		movs	r1, #128
+  41 0008 2046     		mov	r0, r4
+  42 000a FFF7FEFF 		bl	HAL_GPIO_WritePin
+  43              	.LVL0:
+  15:Core/Src/cable-lock.c ****   HAL_GPIO_WritePin(GPIOB, MOTOR_MODE2_Pin, GPIO_PIN_RESET);
+ARM GAS  /tmp/ccrttpPE.s 			page 2
+
+
+  44              		.loc 1 15 3 view .LVU2
+  45 000e 0022     		movs	r2, #0
+  46 0010 4FF40071 		mov	r1, #512
+  47 0014 2046     		mov	r0, r4
+  48 0016 FFF7FEFF 		bl	HAL_GPIO_WritePin
+  49              	.LVL1:
+  50 001a 18E0     		b	.L6
+  51              	.L11:
+  52              	.LBB2:
+  16:Core/Src/cable-lock.c **** 
+  17:Core/Src/cable-lock.c ****   while (1) {
+  18:Core/Src/cable-lock.c ****     // If the cable is not yet connected, enter standby and wake on CP falling edge.
+  19:Core/Src/cable-lock.c ****     // Wakeup from standby triggers a full reset, so execution resumes at main() and
+  20:Core/Src/cable-lock.c ****     // re-enters this function; CP_Pin will already be low on that pass.
+  21:Core/Src/cable-lock.c ****     // This is step 1
+  22:Core/Src/cable-lock.c ****     if (HAL_GPIO_ReadPin(GPIOA, CP_Pin) == GPIO_PIN_SET) {
+  23:Core/Src/cable-lock.c ****       __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WUF1);
+  53              		.loc 1 23 7 view .LVU3
+  54 001c 464B     		ldr	r3, .L12+4
+  55 001e 0122     		movs	r2, #1
+  56 0020 9A61     		str	r2, [r3, #24]
+  24:Core/Src/cable-lock.c ****       HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1_LOW);
+  57              		.loc 1 24 7 view .LVU4
+  58 0022 2120     		movs	r0, #33
+  59 0024 FFF7FEFF 		bl	HAL_PWR_EnableWakeUpPin
+  60              	.LVL2:
+  25:Core/Src/cable-lock.c ****       HAL_PWR_EnterSTANDBYMode();
+  61              		.loc 1 25 7 view .LVU5
+  62 0028 FFF7FEFF 		bl	HAL_PWR_EnterSTANDBYMode
+  63              	.LVL3:
+  64 002c 16E0     		b	.L2
+  65              	.LVL4:
+  66              	.L8:
+  26:Core/Src/cable-lock.c ****     }
+  27:Core/Src/cable-lock.c **** 
+  28:Core/Src/cable-lock.c ****     // Activate motor to engage locking pin. This is step 2.
+  29:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_SLEEP_Pin, GPIO_PIN_SET);   // Wake DRV8801 from sleep
+  30:Core/Src/cable-lock.c ****     HAL_Delay(1);                                               // tWAKE: allow device to initialis
+  31:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_PHASE_Pin, GPIO_PIN_SET);   // Set direction: engage
+  32:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_ENABLE_Pin, GPIO_PIN_SET);  // Enable H-bridge outputs
+  33:Core/Src/cable-lock.c ****     HAL_Delay(500);
+  34:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_ENABLE_Pin, GPIO_PIN_RESET); // Disable outputs
+  35:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_SLEEP_Pin, GPIO_PIN_RESET); // Return DRV8801 to sleep
+  36:Core/Src/cable-lock.c **** 
+  37:Core/Src/cable-lock.c ****     // Close the relay to enable charging. This is step 3.
+  38:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOC, RELAY_Pin, GPIO_PIN_SET);
+  39:Core/Src/cable-lock.c **** 
+  40:Core/Src/cable-lock.c ****     // Illumiate the status LED to indicate that the cable is locked and charging is enabled.
+  41:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOC, LED_Pin, GPIO_PIN_SET);
+  42:Core/Src/cable-lock.c **** 
+  43:Core/Src/cable-lock.c ****     // Wait for the button pin to go low, indicating that the user wants to unlock the cable
+  44:Core/Src/cable-lock.c ****     // This is step 4
+  45:Core/Src/cable-lock.c ****     while (HAL_GPIO_ReadPin(GPIOA, BUTTON_Pin) == GPIO_PIN_SET) {
+  46:Core/Src/cable-lock.c ****       // Do nothing, just wait
+  47:Core/Src/cable-lock.c ****     }
+  48:Core/Src/cable-lock.c **** 
+  49:Core/Src/cable-lock.c ****     // Switch off the status LED to indicate that the cable is unlocked and charging is disabled.
+ARM GAS  /tmp/ccrttpPE.s 			page 3
+
+
+  50:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOC, LED_Pin, GPIO_PIN_RESET);
+  51:Core/Src/cable-lock.c **** 
+  52:Core/Src/cable-lock.c ****     // Open the relay to stop charging. This is step 5.
+  53:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOC, RELAY_Pin, GPIO_PIN_RESET);
+  54:Core/Src/cable-lock.c **** 
+  55:Core/Src/cable-lock.c ****     // Activate motor to disengage locking pin. This is step 6.
+  56:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_SLEEP_Pin, GPIO_PIN_SET);   // Wake DRV8801 from sleep
+  57:Core/Src/cable-lock.c ****     HAL_Delay(1);                                               // tWAKE: allow device to initialis
+  58:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_PHASE_Pin, GPIO_PIN_RESET); // Set direction: disengage
+  59:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_ENABLE_Pin, GPIO_PIN_SET);  // Enable H-bridge outputs
+  60:Core/Src/cable-lock.c ****     HAL_Delay(500);
+  61:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_ENABLE_Pin, GPIO_PIN_RESET); // Disable outputs
+  62:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_SLEEP_Pin, GPIO_PIN_RESET); // Return DRV8801 to sleep
+  63:Core/Src/cable-lock.c **** 
+  64:Core/Src/cable-lock.c ****     // Wait for CP pin to be consistently high for 1 second (cable fully removed)
+  65:Core/Src/cable-lock.c ****     // This is step 7
+  66:Core/Src/cable-lock.c ****     uint32_t high_since = 0;
+  67:Core/Src/cable-lock.c ****     while (1) {
+  68:Core/Src/cable-lock.c ****       if (HAL_GPIO_ReadPin(GPIOA, CP_Pin) == GPIO_PIN_SET) {
+  69:Core/Src/cable-lock.c ****         if (high_since == 0) high_since = HAL_GetTick();
+  70:Core/Src/cable-lock.c ****         if (HAL_GetTick() - high_since >= 1000) break;
+  71:Core/Src/cable-lock.c ****       } else {
+  72:Core/Src/cable-lock.c ****         high_since = 0;
+  67              		.loc 1 72 20 is_stmt 0 view .LVU6
+  68 002e 0024     		movs	r4, #0
+  69              	.LVL5:
+  70              	.L4:
+  67:Core/Src/cable-lock.c ****       if (HAL_GPIO_ReadPin(GPIOA, CP_Pin) == GPIO_PIN_SET) {
+  71              		.loc 1 67 5 is_stmt 1 view .LVU7
+  68:Core/Src/cable-lock.c ****         if (high_since == 0) high_since = HAL_GetTick();
+  72              		.loc 1 68 7 view .LVU8
+  68:Core/Src/cable-lock.c ****         if (high_since == 0) high_since = HAL_GetTick();
+  73              		.loc 1 68 11 is_stmt 0 view .LVU9
+  74 0030 0221     		movs	r1, #2
+  75 0032 4FF09040 		mov	r0, #1207959552
+  76 0036 FFF7FEFF 		bl	HAL_GPIO_ReadPin
+  77              	.LVL6:
+  68:Core/Src/cable-lock.c ****         if (high_since == 0) high_since = HAL_GetTick();
+  78              		.loc 1 68 10 discriminator 1 view .LVU10
+  79 003a 0128     		cmp	r0, #1
+  80 003c F7D1     		bne	.L8
+  69:Core/Src/cable-lock.c ****         if (HAL_GetTick() - high_since >= 1000) break;
+  81              		.loc 1 69 9 is_stmt 1 view .LVU11
+  69:Core/Src/cable-lock.c ****         if (HAL_GetTick() - high_since >= 1000) break;
+  82              		.loc 1 69 12 is_stmt 0 view .LVU12
+  83 003e 002C     		cmp	r4, #0
+  84 0040 73D0     		beq	.L10
+  85              	.LVL7:
+  86              	.L5:
+  70:Core/Src/cable-lock.c ****       } else {
+  87              		.loc 1 70 9 is_stmt 1 view .LVU13
+  70:Core/Src/cable-lock.c ****       } else {
+  88              		.loc 1 70 13 is_stmt 0 view .LVU14
+  89 0042 FFF7FEFF 		bl	HAL_GetTick
+  90              	.LVL8:
+  70:Core/Src/cable-lock.c ****       } else {
+  91              		.loc 1 70 27 discriminator 1 view .LVU15
+ARM GAS  /tmp/ccrttpPE.s 			page 4
+
+
+  92 0046 001B     		subs	r0, r0, r4
+  70:Core/Src/cable-lock.c ****       } else {
+  93              		.loc 1 70 12 discriminator 1 view .LVU16
+  94 0048 B0F57A7F 		cmp	r0, #1000
+  95 004c F0D3     		bcc	.L4
+  96              	.LVL9:
+  97              	.L6:
+  70:Core/Src/cable-lock.c ****       } else {
+  98              		.loc 1 70 12 discriminator 1 view .LVU17
+  99              	.LBE2:
+  17:Core/Src/cable-lock.c ****     // If the cable is not yet connected, enter standby and wake on CP falling edge.
+ 100              		.loc 1 17 3 is_stmt 1 view .LVU18
+ 101              	.LBB3:
+  22:Core/Src/cable-lock.c ****       __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WUF1);
+ 102              		.loc 1 22 5 view .LVU19
+  22:Core/Src/cable-lock.c ****       __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WUF1);
+ 103              		.loc 1 22 9 is_stmt 0 view .LVU20
+ 104 004e 0221     		movs	r1, #2
+ 105 0050 4FF09040 		mov	r0, #1207959552
+ 106 0054 FFF7FEFF 		bl	HAL_GPIO_ReadPin
+ 107              	.LVL10:
+  22:Core/Src/cable-lock.c ****       __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WUF1);
+ 108              		.loc 1 22 8 discriminator 1 view .LVU21
+ 109 0058 0128     		cmp	r0, #1
+ 110 005a DFD0     		beq	.L11
+ 111              	.L2:
+  29:Core/Src/cable-lock.c ****     HAL_Delay(1);                                               // tWAKE: allow device to initialis
+ 112              		.loc 1 29 5 is_stmt 1 view .LVU22
+ 113 005c 354C     		ldr	r4, .L12
+ 114 005e 0122     		movs	r2, #1
+ 115 0060 2021     		movs	r1, #32
+ 116 0062 2046     		mov	r0, r4
+ 117 0064 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 118              	.LVL11:
+  30:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_PHASE_Pin, GPIO_PIN_SET);   // Set direction: engage
+ 119              		.loc 1 30 5 view .LVU23
+ 120 0068 0120     		movs	r0, #1
+ 121 006a FFF7FEFF 		bl	HAL_Delay
+ 122              	.LVL12:
+  31:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_ENABLE_Pin, GPIO_PIN_SET);  // Enable H-bridge outputs
+ 123              		.loc 1 31 5 view .LVU24
+ 124 006e 0122     		movs	r2, #1
+ 125 0070 4021     		movs	r1, #64
+ 126 0072 2046     		mov	r0, r4
+ 127 0074 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 128              	.LVL13:
+  32:Core/Src/cable-lock.c ****     HAL_Delay(500);
+ 129              		.loc 1 32 5 view .LVU25
+ 130 0078 0122     		movs	r2, #1
+ 131 007a 1021     		movs	r1, #16
+ 132 007c 2046     		mov	r0, r4
+ 133 007e FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 134              	.LVL14:
+  33:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_ENABLE_Pin, GPIO_PIN_RESET); // Disable outputs
+ 135              		.loc 1 33 5 view .LVU26
+ 136 0082 4FF4FA70 		mov	r0, #500
+ 137 0086 FFF7FEFF 		bl	HAL_Delay
+ARM GAS  /tmp/ccrttpPE.s 			page 5
+
+
+ 138              	.LVL15:
+  34:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_SLEEP_Pin, GPIO_PIN_RESET); // Return DRV8801 to sleep
+ 139              		.loc 1 34 5 view .LVU27
+ 140 008a 0022     		movs	r2, #0
+ 141 008c 1021     		movs	r1, #16
+ 142 008e 2046     		mov	r0, r4
+ 143 0090 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 144              	.LVL16:
+  35:Core/Src/cable-lock.c **** 
+ 145              		.loc 1 35 5 view .LVU28
+ 146 0094 0022     		movs	r2, #0
+ 147 0096 2021     		movs	r1, #32
+ 148 0098 2046     		mov	r0, r4
+ 149 009a FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 150              	.LVL17:
+  38:Core/Src/cable-lock.c **** 
+ 151              		.loc 1 38 5 view .LVU29
+ 152 009e 04F58064 		add	r4, r4, #1024
+ 153 00a2 0122     		movs	r2, #1
+ 154 00a4 4FF48041 		mov	r1, #16384
+ 155 00a8 2046     		mov	r0, r4
+ 156 00aa FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 157              	.LVL18:
+  41:Core/Src/cable-lock.c **** 
+ 158              		.loc 1 41 5 view .LVU30
+ 159 00ae 0122     		movs	r2, #1
+ 160 00b0 4FF40041 		mov	r1, #32768
+ 161 00b4 2046     		mov	r0, r4
+ 162 00b6 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 163              	.LVL19:
+  45:Core/Src/cable-lock.c ****       // Do nothing, just wait
+ 164              		.loc 1 45 5 view .LVU31
+ 165              	.L3:
+  47:Core/Src/cable-lock.c **** 
+ 166              		.loc 1 47 5 view .LVU32
+  45:Core/Src/cable-lock.c ****       // Do nothing, just wait
+ 167              		.loc 1 45 48 discriminator 2 view .LVU33
+  45:Core/Src/cable-lock.c ****       // Do nothing, just wait
+ 168              		.loc 1 45 12 is_stmt 0 discriminator 2 view .LVU34
+ 169 00ba 0821     		movs	r1, #8
+ 170 00bc 4FF09040 		mov	r0, #1207959552
+ 171 00c0 FFF7FEFF 		bl	HAL_GPIO_ReadPin
+ 172              	.LVL20:
+  45:Core/Src/cable-lock.c ****       // Do nothing, just wait
+ 173              		.loc 1 45 48 discriminator 2 view .LVU35
+ 174 00c4 0128     		cmp	r0, #1
+ 175 00c6 F8D0     		beq	.L3
+  50:Core/Src/cable-lock.c **** 
+ 176              		.loc 1 50 5 is_stmt 1 view .LVU36
+ 177 00c8 1C4C     		ldr	r4, .L12+8
+ 178 00ca 0022     		movs	r2, #0
+ 179 00cc 4FF40041 		mov	r1, #32768
+ 180 00d0 2046     		mov	r0, r4
+ 181 00d2 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 182              	.LVL21:
+  53:Core/Src/cable-lock.c **** 
+ 183              		.loc 1 53 5 view .LVU37
+ARM GAS  /tmp/ccrttpPE.s 			page 6
+
+
+ 184 00d6 0022     		movs	r2, #0
+ 185 00d8 4FF48041 		mov	r1, #16384
+ 186 00dc 2046     		mov	r0, r4
+ 187 00de FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 188              	.LVL22:
+  56:Core/Src/cable-lock.c ****     HAL_Delay(1);                                               // tWAKE: allow device to initialis
+ 189              		.loc 1 56 5 view .LVU38
+ 190 00e2 A4F58064 		sub	r4, r4, #1024
+ 191 00e6 0122     		movs	r2, #1
+ 192 00e8 2021     		movs	r1, #32
+ 193 00ea 2046     		mov	r0, r4
+ 194 00ec FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 195              	.LVL23:
+  57:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_PHASE_Pin, GPIO_PIN_RESET); // Set direction: disengage
+ 196              		.loc 1 57 5 view .LVU39
+ 197 00f0 0120     		movs	r0, #1
+ 198 00f2 FFF7FEFF 		bl	HAL_Delay
+ 199              	.LVL24:
+  58:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_ENABLE_Pin, GPIO_PIN_SET);  // Enable H-bridge outputs
+ 200              		.loc 1 58 5 view .LVU40
+ 201 00f6 0022     		movs	r2, #0
+ 202 00f8 4021     		movs	r1, #64
+ 203 00fa 2046     		mov	r0, r4
+ 204 00fc FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 205              	.LVL25:
+  59:Core/Src/cable-lock.c ****     HAL_Delay(500);
+ 206              		.loc 1 59 5 view .LVU41
+ 207 0100 0122     		movs	r2, #1
+ 208 0102 1021     		movs	r1, #16
+ 209 0104 2046     		mov	r0, r4
+ 210 0106 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 211              	.LVL26:
+  60:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_ENABLE_Pin, GPIO_PIN_RESET); // Disable outputs
+ 212              		.loc 1 60 5 view .LVU42
+ 213 010a 4FF4FA70 		mov	r0, #500
+ 214 010e FFF7FEFF 		bl	HAL_Delay
+ 215              	.LVL27:
+  61:Core/Src/cable-lock.c ****     HAL_GPIO_WritePin(GPIOB, MOTOR_SLEEP_Pin, GPIO_PIN_RESET); // Return DRV8801 to sleep
+ 216              		.loc 1 61 5 view .LVU43
+ 217 0112 0022     		movs	r2, #0
+ 218 0114 1021     		movs	r1, #16
+ 219 0116 2046     		mov	r0, r4
+ 220 0118 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 221              	.LVL28:
+  62:Core/Src/cable-lock.c **** 
+ 222              		.loc 1 62 5 view .LVU44
+ 223 011c 0022     		movs	r2, #0
+ 224 011e 2021     		movs	r1, #32
+ 225 0120 2046     		mov	r0, r4
+ 226 0122 FFF7FEFF 		bl	HAL_GPIO_WritePin
+ 227              	.LVL29:
+  66:Core/Src/cable-lock.c ****     while (1) {
+ 228              		.loc 1 66 5 view .LVU45
+  66:Core/Src/cable-lock.c ****     while (1) {
+ 229              		.loc 1 66 14 is_stmt 0 view .LVU46
+ 230 0126 0024     		movs	r4, #0
+ 231 0128 82E7     		b	.L4
+ARM GAS  /tmp/ccrttpPE.s 			page 7
+
+
+ 232              	.LVL30:
+ 233              	.L10:
+  69:Core/Src/cable-lock.c ****         if (HAL_GetTick() - high_since >= 1000) break;
+ 234              		.loc 1 69 30 is_stmt 1 discriminator 1 view .LVU47
+  69:Core/Src/cable-lock.c ****         if (HAL_GetTick() - high_since >= 1000) break;
+ 235              		.loc 1 69 43 is_stmt 0 discriminator 1 view .LVU48
+ 236 012a FFF7FEFF 		bl	HAL_GetTick
+ 237              	.LVL31:
+ 238 012e 0446     		mov	r4, r0
+ 239              	.LVL32:
+  69:Core/Src/cable-lock.c ****         if (HAL_GetTick() - high_since >= 1000) break;
+ 240              		.loc 1 69 43 discriminator 1 view .LVU49
+ 241 0130 87E7     		b	.L5
+ 242              	.L13:
+ 243 0132 00BF     		.align	2
+ 244              	.L12:
+ 245 0134 00040048 		.word	1207960576
+ 246 0138 00700040 		.word	1073770496
+ 247 013c 00080048 		.word	1207961600
+ 248              	.LBE3:
+ 249              		.cfi_endproc
+ 250              	.LFE132:
+ 252              		.text
+ 253              	.Letext0:
+ 254              		.file 2 "/home/charlie/.config/Code/User/globalStorage/bmd.stm32-for-vscode/@xpack-dev-tools/arm-n
+ 255              		.file 3 "/home/charlie/.config/Code/User/globalStorage/bmd.stm32-for-vscode/@xpack-dev-tools/arm-n
+ 256              		.file 4 "Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g431xx.h"
+ 257              		.file 5 "Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_gpio.h"
+ 258              		.file 6 "Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h"
+ 259              		.file 7 "Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_pwr.h"
+ARM GAS  /tmp/ccrttpPE.s 			page 8
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 cable-lock.c
+     /tmp/ccrttpPE.s:21     .text.cable_lock:00000000 $t
+     /tmp/ccrttpPE.s:27     .text.cable_lock:00000000 cable_lock
+     /tmp/ccrttpPE.s:245    .text.cable_lock:00000134 $d
+
+UNDEFINED SYMBOLS
+HAL_GPIO_WritePin
+HAL_PWR_EnableWakeUpPin
+HAL_PWR_EnterSTANDBYMode
+HAL_GPIO_ReadPin
+HAL_GetTick
+HAL_Delay
